@@ -1,0 +1,15 @@
+__pycache__/
+.ropeproject/
+.vscode/
+Source Files/
+build/
+dist/
+models/
+*.build
+*.pyc
+*.db
+*.spec
+*.exe
+*.ini
+*.pickle
+*.blend*
