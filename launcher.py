@@ -2,8 +2,8 @@
 # Actual necessary libs
 import tkinter as tk
 from tkinter import ttk, messagebox
-import pickle
-import runpy
+import pickle # TODO use plain text (TOML, INI, JSON, etc)
+import runpy # TODO does not work with Nuitka - need to import game code as module(s)
 import sys
 import os
 # Libs used by the target file (needed for PyInstaller)
@@ -199,7 +199,7 @@ combobox1_lb = ttk.Label(page1, text="Window resolution:")
 combobox1 = ttk.Combobox(page1, textvar=screen_res, state="readonly",
                          values=["1600 x 900", "1366 x 768",
                                  "1280 x 720", "1152 x 648"])
-
+# TODO likely unnecessary - Arcade has better gamepad support
 page2 = tk.Frame(sett_win)
 page2.columnconfigure(0, weight=1)
 notebook.add(page2, text="Gamepad settings")

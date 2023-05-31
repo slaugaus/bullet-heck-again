@@ -5,6 +5,7 @@ Source Files/
 build/
 dist/
 models/
+frames/
 *.build
 *.pyc
 *.db
