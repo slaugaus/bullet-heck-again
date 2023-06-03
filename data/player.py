@@ -17,13 +17,10 @@ class Player(arcade.Sprite):
 
         # Adjust the collision box. Default includes too much empty space
         # side-to-side. Box is centered at sprite center, (0, 0)
-        # Your sprite is 75 x 50
         # self.points = [[-22, -64], [22, -64], [22, 28], [-22, 28]]
 
-        MAIN_PATH = "anims/ship/"
-
-        for file in os.listdir(MAIN_PATH):
-            self.textures.append(arcade.load_texture(MAIN_PATH + file))
+        # Sprites are 75x50 each. This sheet has 5 columns and 30 sprites
+        self.textures = arcade.load_spritesheet("spritesheets/player.png", 75, 50, 5, 30)
 
         self.LAST_FRAME_IDX = len(self.textures) - 1
 

@@ -22,5 +22,7 @@ class Bullet(arcade.SpriteSolidColor):
 
         self.change_x = speed
 
+        self.damage = damage
 
-# class EnemyBullet():
+
+# TODO class EnemyBullet():

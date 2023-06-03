@@ -1,4 +1,5 @@
 # TODO Can't be used in Sprites in class form. Probably needs to be a module instead of a class?
+# TODO load from file?
 
 class Settings():
     """Holds values that can be changed by the user."""
