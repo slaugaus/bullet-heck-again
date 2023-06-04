@@ -15,6 +15,7 @@ class GameAudio():
         self.levelup = arcade.Sound("audio/levelup.ogg")
         self.leveldown = arcade.Sound("audio/leveldown.ogg")
 
+        # TODO actually play BGM
         self.bgm = arcade.Sound("audio/bgm.ogg", streaming=True)
 
     def play_at(self, settings: Settings, sound: arcade.Sound, x):

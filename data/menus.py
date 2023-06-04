@@ -1,5 +1,7 @@
 import arcade
 
+# TODO This whole thing.
+# TODO Views sound cool, but can't be truly overlaid over one another. Perhaps you can fake it?
 class PauseView(arcade.View):
 
     def __init__(self, game_view):

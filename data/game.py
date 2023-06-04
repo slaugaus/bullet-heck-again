@@ -1,12 +1,13 @@
 import arcade
+import random
 import parameters as params
 from player import Player
 from settings import Settings
 from stats import Stats
 from bullets import Bullet
 from enemies import *
-import random
 from audio import GameAudio
+from star_bg import StarBG
 
 
 class GameView(arcade.View):
@@ -29,6 +30,7 @@ class GameView(arcade.View):
 
         # If you have sprite lists, you should create them here,
         # and set them to None
+        self.star_list = None
         self.player_list = None
         self.bullet_list = None
         self.enemy_list = None
@@ -47,10 +49,15 @@ class GameView(arcade.View):
     def setup(self):
         """Set up the game variables. Call to re-start the game."""
         # Create your sprites and sprite lists here
+        self.star_list = arcade.SpriteList()
         self.player_list = arcade.SpriteList()
         self.bullet_list = arcade.SpriteList()
         self.enemy_list = arcade.SpriteList()
         self.explosion_list = arcade.SpriteList()
+
+        self.stats.reset_stats()
+
+        self.bg = StarBG(self.star_list)
 
         # Set up player
         self.player = Player()
@@ -68,6 +75,7 @@ class GameView(arcade.View):
         self.clear()
 
         # Call draw() on all your sprite lists below
+        self.star_list.draw()
         self.player_list.draw()
         self.player_list.draw_hit_boxes(arcade.color.AERO_BLUE)
         self.bullet_list.draw()
@@ -75,12 +83,29 @@ class GameView(arcade.View):
         self.enemy_list.draw_hit_boxes(arcade.color.RED)
         self.explosion_list.draw()
 
+        # Draw a barebones score UI.
+        # TODO make this a class and add more UI
+        arcade.draw_text(
+            f"Score: {self.stats.score}",
+            0, self.settings.screen_height - 20
+        )
+        arcade.draw_text(
+            f"Game Level: {self.stats.game_level}",
+            0, self.settings.screen_height - 40
+        )
+        arcade.draw_text(
+            f"Next enemy in: {self.stats.enemy_timer}",
+            0, self.settings.screen_height - 60
+        )
+
     def on_update(self, delta_time):
         """
         All the logic to move, and the game logic goes here.
         Normally, you'll call update() on the sprite lists that
         need it.
         """
+        self.bg.update()
+
         self.player_list.update()
         self.player_list.update_animation()
 
@@ -93,6 +118,8 @@ class GameView(arcade.View):
 
         self.update_bullets()
         self.do_player_enemy_collisions()
+        self.spawn_enemies()
+        self.manage_game_level()
 
     def on_key_press(self, key, key_modifiers):
         """
@@ -113,11 +140,13 @@ class GameView(arcade.View):
                 self.right_pressed = True
             case arcade.key.Z:
                 self.fire_pressed = True
+            case arcade.key.SPACE:
+                self.fire_pressed = True
 
             case arcade.key.A:
-                self.settings.autofire ^= 1 # toggle
+                self.settings.autofire ^= 1  # toggle
 
-            # TODO "secret" debug keys!
+            # TODO (remove) "secret" debug keys!
             # Player level (be careful not to break this!)
             case arcade.key.NUM_ADD:
                 self.stats.ship_level += 1
@@ -139,6 +168,17 @@ class GameView(arcade.View):
             case arcade.key.NUM_6:
                 self.enemy_list.append(Enemy(self.preloader, 6, start_y=random.randint(0, self.SCREEN_HEIGHT)))
 
+            # Spawn a new player if it died
+            case arcade.key.P:
+                if self.stats.ship_lives == 0:
+                    self.player = Player()
+                    self.player_list.append(self.player)
+                    self.stats.ship_lives = params.SHIP_LIVES
+
+            # Restart
+            case arcade.key.R:
+                self.setup()
+
         self.update_player_speed()
 
     def on_key_release(self, key, key_modifiers):
@@ -157,6 +197,8 @@ class GameView(arcade.View):
                 self.right_pressed = False
             case arcade.key.Z:
                 self.fire_pressed = False
+            case arcade.key.SPACE:
+                self.fire_pressed = False
 
         self.update_player_speed()
 
@@ -174,12 +216,14 @@ class GameView(arcade.View):
 
     # TODO gamepad events (XInput doesn't work, DirectInput does)
 
+    # ----------------------------------------------------------------------------------
+
     def update_player_speed(self):
         # By default, ensure player isn't moving
         self.player.change_x = 0
         self.player.change_y = 0
 
-        # Vertical
+        # Vertical (optimal according to Arcade's "Better Move By Keyboard")
         if self.up_pressed and not self.down_pressed:
             self.player.change_y = params.SHIP_SPEED
         elif self.down_pressed and not self.up_pressed:
@@ -190,7 +234,11 @@ class GameView(arcade.View):
         elif self.right_pressed and not self.left_pressed:
             self.player.change_x = params.SHIP_SPEED
 
-        # TODO proper diagonals (ship.move_digital in old code)
+        # If moving diagonally, multiply by (root2)/2 so ship's velocity is still the same
+        # Thanks, trigonometry
+        if self.player.change_x and self.player.change_y:
+            self.player.change_x *= params.DIAG_FACTOR
+            self.player.change_y *= params.DIAG_FACTOR
 
     def spawn_player_bullet_pattern(self):
         """Spawn bullets based on the ship's level."""
@@ -230,10 +278,36 @@ class GameView(arcade.View):
     def do_player_enemy_collisions(self):
         hit_list = arcade.check_for_collision_with_list(self.player, self.enemy_list)
 
-        if len(hit_list) > 0:
-            # TODO better player HP logic (and UI), only explode once
+        if len(hit_list) > 0 and self.stats.ship_lives > 0:
+            # TODO better player HP logic (and UI)
             self.explode_at_entity(self.player, "l")
+            self.stats.ship_lives = 0
             self.player.remove_from_sprite_lists()
+
+    def kill_enemy(self, enemy: Enemy):
+        match(enemy.id):
+            case(2):
+                # Big boom and spawn 3 1s, 2 going at angles and 1 backwards
+                self.explode_at_entity(enemy, 'l')
+                base_speed = params.ENEMY_SPEEDS[0]
+                x = y = params.DIAG_FACTOR * base_speed
+                self.enemy_list.append(Enemy(self.preloader, 1, enemy.center_x-25, enemy.center_y-25, (-x, -y, 45)))
+                self.enemy_list.append(Enemy(self.preloader, 1, enemy.center_x-25, enemy.center_y+25, (-x, y, 315)))
+                self.enemy_list.append(Enemy(self.preloader, 1, enemy.center_x+25, enemy.center_y, (2*base_speed, 0, 180)))
+            case(5):
+                # Spawn enemy 4
+                # TODO instead of exploding, enemies 5 and 6 should shoot off a cylinder (would have to render that)
+                self.explode_at_entity(enemy)
+                self.enemy_list.append(Enemy(self.preloader, 4, enemy.center_x, enemy.center_y))
+            case(6):
+                # Spawn enemy 5
+                self.explode_at_entity(enemy)
+                self.enemy_list.append(Enemy(self.preloader, 5, enemy.center_x, enemy.center_y))
+            case(_):
+                self.explode_at_entity(enemy)
+
+        self.stats.score += params.ENEMY_POINTS[enemy.idx]
+        enemy.remove_from_sprite_lists()
 
     def do_bullet_enemy_collisions(self):
         # Collide with enemies
@@ -248,26 +322,11 @@ class GameView(arcade.View):
             # For every enemy we hit, add to the score and hurt it
             for enemy in hit_list:
                 enemy.health -= bullet.damage
-                self.stats.score += params.ENEMY_POINTS[enemy.idx]
 
-                # Kill; spawn children and explode
+                # Kill; spawn children and explode, award points
                 if enemy.health <= 0:
-                    match(enemy.id):
-                        case(2):
-                            self.explode_at_entity(enemy, 'l')
-                            self.enemy_list.append(Enemy(self.preloader, 1, enemy.center_x-25, enemy.center_y-25))
-                            self.enemy_list.append(Enemy(self.preloader, 1, enemy.center_x-25, enemy.center_y+25))
-                            self.enemy_list.append(Enemy(self.preloader, 1, enemy.center_x+25, enemy.center_y))
-                        case(5):
-                            self.explode_at_entity(enemy)
-                            self.enemy_list.append(Enemy(self.preloader, 4, enemy.center_x, enemy.center_y))
-                        case(6):
-                            self.explode_at_entity(enemy)
-                            self.enemy_list.append(Enemy(self.preloader, 5, enemy.center_x, enemy.center_y))
-                        case(_):
-                            self.explode_at_entity(enemy)
-                    
-                    enemy.remove_from_sprite_lists()
+                    self.kill_enemy(enemy)
+                    self.stats.score += params.ENEMY_POINTS[enemy.idx]
 
                 # Hit Sound (uses left to prevent a >1 error)
                 self.audio.play_at(self.settings, self.audio.enemy_hit, enemy.left)
@@ -293,3 +352,42 @@ class GameView(arcade.View):
             self.spawn_player_bullet_pattern()
 
         self.do_bullet_enemy_collisions()
+
+    def spawn_enemies(self):
+        """Spawn enemies based on a timer, random numbers, and the game level."""
+        self.stats.enemy_timer -= 1
+        if self.stats.enemy_timer <= 0:
+            self.enemy_list.append(Enemy(
+                self.preloader,
+                id = random.randint(1, self.stats.game_level),
+                start_y = random.randint(0, self.settings.screen_height)
+            ))
+            # spawn_enemy(settings, screen, enemies, images, id)
+            self.stats.enemy_timer = self.stats.next_enemy_timer
+
+    def manage_game_level(self):
+        """Manage the game level (highest spawnable enemy ID) based on score."""
+        if self.stats.game_level < 6:
+            # Hardcoded curve
+            if self.stats.score >= 250:
+                self.stats.game_level = 2
+                self.stats.next_enemy_timer = 110
+            if self.stats.score >= 750:
+                self.stats.game_level = 3
+                self.stats.next_enemy_timer = 90
+            if self.stats.score >= 1250:
+                self.stats.game_level = 4
+                self.stats.next_enemy_timer = 80
+            if self.stats.score >= 1750:
+                self.stats.game_level = 5
+                self.stats.next_enemy_timer = 70
+            if self.stats.score >= 2500:
+                self.stats.game_level = 6
+                self.stats.next_enemy_timer = 60
+                self.stats.next_score = 3500
+        elif self.stats.score >= self.stats.next_score:
+            # Decrement timer and scale the next score
+            if self.stats.next_enemy_timer > params.ENEMY_TIMER_MIN:
+                self.stats.next_enemy_timer -= 10
+            self.stats.next_score_increment *= 1.2
+            self.stats.next_score += int(self.stats.next_score_increment)

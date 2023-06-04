@@ -5,10 +5,11 @@ import parameters as params
 import random
 import os
 
-class SpritePreloader():
-    """Preloads the textures of recurring things so the work doesn't get done every time one spawns."""
-    def __init__(self):
 
+class SpritePreloader:
+    """Preloads the textures of recurring things so the work doesn't get done every time one spawns."""
+
+    def __init__(self):
         # Enemies
         self.enemies = []
         # Spritesheet metadata for the enemies
@@ -19,16 +20,21 @@ class SpritePreloader():
             (50, 28, 5, 30),
             (50, 50, 12, 60),
             (50, 50, 5, 30),
-            (50, 50, 5, 20)
+            (50, 50, 5, 20),
         ]
         for id in range(1, 7):
-            w, h, c, n = ENEMY_SHEET_DATA[id-1]
-            self.enemies.append(arcade.load_spritesheet(f"spritesheets/enemy{id}.png", w, h, c, n))
+            w, h, c, n = ENEMY_SHEET_DATA[id - 1]
+            self.enemies.append(
+                arcade.load_spritesheet(f"spritesheets/enemy{id}.png", w, h, c, n)
+            )
 
         # Explosions
-        self.explosion = arcade.load_spritesheet("spritesheets/explosion.png", 128, 128, 5, 45)
-        self.explosion_large = arcade.load_spritesheet("spritesheets/explosion_large.png", 256, 256, 9, 45)
-
+        self.explosion = arcade.load_spritesheet(
+            "spritesheets/explosion.png", 128, 128, 5, 45
+        )
+        self.explosion_large = arcade.load_spritesheet(
+            "spritesheets/explosion_large.png", 256, 256, 9, 45
+        )
 
 
 class Enemy(arcade.Sprite):
@@ -40,17 +46,32 @@ class Enemy(arcade.Sprite):
          5 - Spinning plus   \n
          6 - Spinning star"""
 
-    def __init__(self, preloader: SpritePreloader, id, start_x=0, start_y=0):
+    def __init__(
+        self,
+        preloader: SpritePreloader,
+        id,
+        start_x=0,
+        start_y=0,
+        custom_velocity_angle: tuple[float, float, float] = None,
+    ):
         super().__init__()
 
         self.id = id
-        self.idx = id-1 # Tiny optimization?
+        self.idx = id - 1  # Tiny optimization?
 
         # Grab this enemy's info from params
         self.health = params.ENEMY_HEALTHS[self.idx]
         # Randomized for variety
-        self.fire_cooldown = params.ENEMY_FIRE_COOLDOWNS[self.idx] + random.randint(-10, 10)
-        self.speed = params.ENEMY_SPEEDS[self.idx]
+        self.fire_cooldown = params.ENEMY_FIRE_COOLDOWNS[self.idx] + random.randint(
+            -10, 10
+        )
+        self.change_x = -params.ENEMY_SPEEDS[self.idx]
+
+        # Used for the children of enemy 2
+        if custom_velocity_angle:
+            self.change_x += custom_velocity_angle[0]
+            self.change_y = custom_velocity_angle[1]
+            self.angle = custom_velocity_angle[2]
 
         # Grab preloaded textures
         self.textures = preloader.enemies[self.idx]
@@ -67,15 +88,15 @@ class Enemy(arcade.Sprite):
             self.left = self.SCREEN_WIDTH
         self.center_y = start_y
 
-    
     def update(self):
         # Move
-        self.center_x -= self.speed
+        super().update()
         # "Die" if offscreen
-        if self.right < 0:
+        # TODO small score penalty for letting one get through, UNLESS it's vertically offscreen
+        if self.right < 0 or self.left > self.SCREEN_WIDTH:
+            print("Defenses breached :(")
             self.remove_from_sprite_lists()
 
-    
     def update_animation(self, delta_time: float = 1 / 60):
         self.cur_texture_index += 1
 
@@ -96,9 +117,9 @@ class Explosion(arcade.Sprite):
 
     def __init__(self, preloader: SpritePreloader, center_x, center_y, size="s"):
         super().__init__(center_x=center_x, center_y=center_y)
-        if size == 's':
+        if size == "s":
             self.textures = preloader.explosion
-        elif size == 'l':
+        elif size == "l":
             self.textures = preloader.explosion_large
 
         self.texture = self.textures[0]
