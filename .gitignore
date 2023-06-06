@@ -6,6 +6,8 @@ build/
 dist/
 models/
 frames/
+*.dist/
+*.onefile-build/
 *.build
 *.pyc
 *.db
