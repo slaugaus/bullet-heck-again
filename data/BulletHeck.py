@@ -8,7 +8,9 @@ def main():
     """Main function"""
     settings = Settings()
 
-    window = arcade.Window(settings.screen_width, settings.screen_height, "Bullet Heck!")
+    window = arcade.Window(
+        settings.screen_width, settings.screen_height, "Bullet Heck!"
+    )
 
     # Game may not be running from the data dir
     if os.getcwd().find("data") == -1:

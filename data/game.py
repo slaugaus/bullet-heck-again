@@ -86,16 +86,15 @@ class GameView(arcade.View):
         # Draw a barebones score UI.
         # TODO make this a class and add more UI
         arcade.draw_text(
-            f"Score: {self.stats.score}",
-            0, self.settings.screen_height - 20
+            f"Score: {self.stats.score}", 0, self.settings.screen_height - 20
         )
         arcade.draw_text(
-            f"Game Level: {self.stats.game_level}",
-            0, self.settings.screen_height - 40
+            f"Game Level: {self.stats.game_level}", 0, self.settings.screen_height - 40
         )
         arcade.draw_text(
             f"Next enemy in: {self.stats.enemy_timer}",
-            0, self.settings.screen_height - 60
+            0,
+            self.settings.screen_height - 60,
         )
 
     def on_update(self, delta_time):
@@ -113,7 +112,7 @@ class GameView(arcade.View):
 
         self.enemy_list.update()
         self.enemy_list.update_animation()
-        
+
         self.explosion_list.update_animation()
 
         self.update_bullets()
@@ -156,17 +155,41 @@ class GameView(arcade.View):
                 self.audio.play_at(self.settings, self.audio.leveldown, 0)
             # Enemy spawning
             case arcade.key.NUM_1:
-                self.enemy_list.append(Enemy(self.preloader, 1, start_y=random.randint(0, self.SCREEN_HEIGHT)))
+                self.enemy_list.append(
+                    Enemy(
+                        self.preloader, 1, start_y=random.randint(0, self.SCREEN_HEIGHT)
+                    )
+                )
             case arcade.key.NUM_2:
-                self.enemy_list.append(Enemy(self.preloader, 2, start_y=random.randint(0, self.SCREEN_HEIGHT)))
+                self.enemy_list.append(
+                    Enemy(
+                        self.preloader, 2, start_y=random.randint(0, self.SCREEN_HEIGHT)
+                    )
+                )
             case arcade.key.NUM_3:
-                self.enemy_list.append(Enemy(self.preloader, 3, start_y=random.randint(0, self.SCREEN_HEIGHT)))
+                self.enemy_list.append(
+                    Enemy(
+                        self.preloader, 3, start_y=random.randint(0, self.SCREEN_HEIGHT)
+                    )
+                )
             case arcade.key.NUM_4:
-                self.enemy_list.append(Enemy(self.preloader, 4, start_y=random.randint(0, self.SCREEN_HEIGHT)))
+                self.enemy_list.append(
+                    Enemy(
+                        self.preloader, 4, start_y=random.randint(0, self.SCREEN_HEIGHT)
+                    )
+                )
             case arcade.key.NUM_5:
-                self.enemy_list.append(Enemy(self.preloader, 5, start_y=random.randint(0, self.SCREEN_HEIGHT)))
+                self.enemy_list.append(
+                    Enemy(
+                        self.preloader, 5, start_y=random.randint(0, self.SCREEN_HEIGHT)
+                    )
+                )
             case arcade.key.NUM_6:
-                self.enemy_list.append(Enemy(self.preloader, 6, start_y=random.randint(0, self.SCREEN_HEIGHT)))
+                self.enemy_list.append(
+                    Enemy(
+                        self.preloader, 6, start_y=random.randint(0, self.SCREEN_HEIGHT)
+                    )
+                )
 
             # Spawn a new player if it died
             case arcade.key.P:
@@ -201,18 +224,6 @@ class GameView(arcade.View):
                 self.fire_pressed = False
 
         self.update_player_speed()
-
-    def on_mouse_press(self, x, y, button, key_modifiers):
-        """
-        Called when the user presses a mouse button.
-        """
-        pass
-
-    def on_mouse_release(self, x, y, button, key_modifiers):
-        """
-        Called when a user releases a mouse button.
-        """
-        pass
 
     # TODO gamepad events (XInput doesn't work, DirectInput does)
 
@@ -265,14 +276,16 @@ class GameView(arcade.View):
             self.bullet_list.append(bullet3)
         # Only used if messing with debug keys. You gon' learn today
         if self.stats.ship_level > 8 or self.stats.ship_level < 0:
-            bullet1 = bullet1 = Bullet(self.player, damage=0, height=abs(self.stats.ship_level))
+            bullet1 = Bullet(self.player, damage=0, height=abs(self.stats.ship_level))
         self.bullet_list.append(bullet1)
         # Pew!
         self.audio.play_at(self.settings, self.audio.pew, self.player.right)
 
-    def explode_at_entity(self, entity: arcade.Sprite, size = "s"):
+    def explode_at_entity(self, entity: arcade.Sprite, size="s"):
         """Boom!"""
-        self.explosion_list.append(Explosion(self.preloader, entity.center_x, entity.center_y, size))
+        self.explosion_list.append(
+            Explosion(self.preloader, entity.center_x, entity.center_y, size)
+        )
         self.audio.play_at(self.settings, self.audio.boom[size], entity.center_x)
 
     def do_player_enemy_collisions(self):
@@ -285,25 +298,53 @@ class GameView(arcade.View):
             self.player.remove_from_sprite_lists()
 
     def kill_enemy(self, enemy: Enemy):
-        match(enemy.id):
-            case(2):
+        match (enemy.id):
+            case (2):
                 # Big boom and spawn 3 1s, 2 going at angles and 1 backwards
-                self.explode_at_entity(enemy, 'l')
+                self.explode_at_entity(enemy, "l")
                 base_speed = params.ENEMY_SPEEDS[0]
                 x = y = params.DIAG_FACTOR * base_speed
-                self.enemy_list.append(Enemy(self.preloader, 1, enemy.center_x-25, enemy.center_y-25, (-x, -y, 45)))
-                self.enemy_list.append(Enemy(self.preloader, 1, enemy.center_x-25, enemy.center_y+25, (-x, y, 315)))
-                self.enemy_list.append(Enemy(self.preloader, 1, enemy.center_x+25, enemy.center_y, (2*base_speed, 0, 180)))
-            case(5):
+                self.enemy_list.append(
+                    Enemy(
+                        self.preloader,
+                        1,
+                        enemy.center_x - 25,
+                        enemy.center_y - 25,
+                        (-x, -y, 45),
+                    )
+                )
+                self.enemy_list.append(
+                    Enemy(
+                        self.preloader,
+                        1,
+                        enemy.center_x - 25,
+                        enemy.center_y + 25,
+                        (-x, y, 315),
+                    )
+                )
+                self.enemy_list.append(
+                    Enemy(
+                        self.preloader,
+                        1,
+                        enemy.center_x + 25,
+                        enemy.center_y,
+                        (2 * base_speed, 0, 180),
+                    )
+                )
+            case (5):
                 # Spawn enemy 4
                 # TODO instead of exploding, enemies 5 and 6 should shoot off a cylinder (would have to render that)
                 self.explode_at_entity(enemy)
-                self.enemy_list.append(Enemy(self.preloader, 4, enemy.center_x, enemy.center_y))
-            case(6):
+                self.enemy_list.append(
+                    Enemy(self.preloader, 4, enemy.center_x, enemy.center_y)
+                )
+            case (6):
                 # Spawn enemy 5
                 self.explode_at_entity(enemy)
-                self.enemy_list.append(Enemy(self.preloader, 5, enemy.center_x, enemy.center_y))
-            case(_):
+                self.enemy_list.append(
+                    Enemy(self.preloader, 5, enemy.center_x, enemy.center_y)
+                )
+            case (_):
                 self.explode_at_entity(enemy)
 
         self.stats.score += params.ENEMY_POINTS[enemy.idx]
@@ -337,7 +378,7 @@ class GameView(arcade.View):
 
     def update_bullets(self):
         """This would be in the Bullets class if it wasn't handling the bullet-enemy collisions.\n
-           Also fires them when appropriate"""
+        Also fires them when appropriate"""
         # Update player bullet cooldown
         self.stats.player_bullet_cooldown -= 1
         if self.stats.player_bullet_cooldown < 0:
@@ -348,6 +389,7 @@ class GameView(arcade.View):
             (self.settings.autofire ^ self.fire_pressed)
             and self.stats.player_bullet_cooldown == 0
             and len(self.bullet_list) < params.PLAYER_BULLET_LIMIT
+            and self.stats.ship_lives > 0
         ):
             self.spawn_player_bullet_pattern()
 
@@ -357,11 +399,13 @@ class GameView(arcade.View):
         """Spawn enemies based on a timer, random numbers, and the game level."""
         self.stats.enemy_timer -= 1
         if self.stats.enemy_timer <= 0:
-            self.enemy_list.append(Enemy(
-                self.preloader,
-                id = random.randint(1, self.stats.game_level),
-                start_y = random.randint(0, self.settings.screen_height)
-            ))
+            self.enemy_list.append(
+                Enemy(
+                    self.preloader,
+                    id=random.randint(1, self.stats.game_level),
+                    start_y=random.randint(0, self.settings.screen_height),
+                )
+            )
             # spawn_enemy(settings, screen, enemies, images, id)
             self.stats.enemy_timer = self.stats.next_enemy_timer
 
@@ -369,6 +413,7 @@ class GameView(arcade.View):
         """Manage the game level (highest spawnable enemy ID) based on score."""
         if self.stats.game_level < 6:
             # Hardcoded curve
+            # TODO did you change this for the 1-minute demo? Extract to parameters and fine-tune numbers
             if self.stats.score >= 250:
                 self.stats.game_level = 2
                 self.stats.next_enemy_timer = 110

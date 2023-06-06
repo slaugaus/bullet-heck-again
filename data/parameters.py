@@ -1,11 +1,5 @@
 """Constants that the user can't change, but I might want to."""
 
-# Colors
-# WHITE = pygame.Color(255, 255, 255, 255)
-# BLACK = pygame.Color(0, 0, 0, 255)
-# RED = pygame.Color(255, 0, 0, 255)
-# GREEN = pygame.Color(0, 255, 0, 255)
-# BLUE = pygame.Color(0, 0, 255, 255)
 # Performance
 STAR_LIMIT = 100
 FPS_LIMIT = 60
@@ -13,7 +7,7 @@ FPS_LIMIT = 60
 SHIP_SPEED = 10  # pixels/frame
 SHIP_HEALTH = 3
 SHIP_LIVES = 3
-DIAG_FACTOR = 2 ** 0.5 / 2  # (root2)/2
+DIAG_FACTOR = 2**0.5 / 2  # (root2)/2
 STAR_SPEED = 5
 STAR_ACCELERATION = 0.5
 MAX_SHIP_LEVEL = 8
