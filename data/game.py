@@ -290,6 +290,7 @@ class GameView(arcade.View):
 
     def do_player_enemy_collisions(self):
         hit_list = arcade.check_for_collision_with_list(self.player, self.enemy_list)
+        # TODO? if you want to shrink player's hitbox, add grazing
 
         if len(hit_list) > 0 and self.stats.ship_lives > 0:
             # TODO better player HP logic (and UI)
